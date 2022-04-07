@@ -6,6 +6,7 @@ int executeProgram(char * command, int segment);
 int compareTo(char * str1, char * str2);
 void clear(char * buffer);
 int delete(char * fname);
+int readSector(char * filename, int absSector);
 int writeFile(Char * fname, char * buffer, int sectors);
 void copyFile(char * line);
 void writeFileHelper(char * dest, char * buffer, int sectors);

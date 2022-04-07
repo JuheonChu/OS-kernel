@@ -59,7 +59,7 @@ void copyFile(char * line){
   char buffer[13312];
   struct directory diskDir;
 
-  int i,j,k,z,sectors;
+  int i,j,k,x,z,sectors;
 
   for(z = 0; z < 6; z++){
     src[z] = '\0';
@@ -69,8 +69,9 @@ void copyFile(char * line){
    i = 5;
    j = 7;
    k = 0;
+   x = 0; // additional variable to keep track of the length of the file
 
-    while(line[i] != ' '){
+    while(line[i] != ' ' && k < 6){
       /* read contents of <file> on screen.*/
       src[k] = line[i];
       i++;
@@ -78,10 +79,14 @@ void copyFile(char * line){
     }
 
     src[k] = '\0';
+
+    printString(line);
+
+    
     i++;
     k = 0;
     
-    while(line[i] != '\0'){
+    while(line[i] != '\0' && k < 6){
       dest[k] = line[i];
       i++;
       k++;
@@ -105,3 +110,84 @@ int deleteFile(char * fname){
 int writeFile(char * fname, char * buffer, int sectors){
   return interrupt(0x21, 0x08, fname, buffer, sectors);
 }
+
+int readSector(char * buffer, int absSector){
+  return interrupt(0x21, 0x02, buffer, absSector, 0); 
+}
+
+
+/* helper Function to return the remainder for modulus operation.
+ * @param int sector, int divisor
+ * @return remainder 
+ * @author John Chu, Amir Zawad, Adia Wu
+ */
+int MOD(int sector, int divisor){
+    int remainder;
+    while(sector >= divisor){
+      sector = sector - divisor;
+    }
+    remainder = sector;
+    return remainder;
+}
+
+
+void dir(){
+  struct directory diskDir;
+  char fileName[20];
+  int sectorBuffer[20];
+
+  int i,j,k,cnt;
+
+  i = 0;
+  j = 0;
+  k = 0;
+  cnt = 0;
+  
+  readSector(&diskDir, 2);
+
+
+
+  for(i = 0; i < 16; i++){
+    if(diskDir.entries[i].name[0] != 0x00){
+      cnt = 0; //counting for number of sectors
+      printString("h\0");
+      for(j = 0; j < 6 && diskDir.entries[i].name[j] != 0x00; j++){
+	fileName[j] = diskDir.entries[i].name[j];
+      }
+      fileName[j] = ' ';
+
+      for(k = i; i < 26 && diskDir.entries[i].sectors[k] != 0x00; k++){
+	cnt++;
+      }
+
+
+      if(cnt > 9){
+	sectorBuffer[0] = cnt / 10;
+	sectorBuffer[1] = MOD(cnt,10);
+	fileName[j+1] = '\0';
+	//printString(fileName);
+
+
+
+	//printString("\n\0");
+	 
+
+      }else{
+	sectorBuffer[0] = cnt;
+	fileName[j+1] = '\0';
+
+	//printString(fileName);
+
+	
+	//printString("\n\0");
+      }
+
+      
+    }
+  }
+  
+
+  
+  // I cannot read the sector
+}
+

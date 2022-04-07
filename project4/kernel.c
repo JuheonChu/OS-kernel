@@ -266,8 +266,9 @@ int handleInterrupt21(int ax, int bx, int cx, int dx){
     return 1;
   }else if(ax == 0x01){ //read characters from the keyboard until ENTER is pressed.
     return readString(buf);
+  }else if(ax == 0x02){
+    return readSector(bx,cx);
   }
-
   else if(ax == 0x03){ //read in the Disk Directory from sector 2 and search it for indicated filename.
    return readfile(bx, cx);
   }else if(ax == 0x04){

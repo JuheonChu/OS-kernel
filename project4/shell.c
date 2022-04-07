@@ -114,6 +114,9 @@ void recognizesUserCommand(char * line, char * buffer){
 
     copyFile(line);
 
+  } else if(line[0] == 'd' && line[1] == 'i' && line[2] == 'r'){
+
+    dir();
   }
   else{
     errorMessage[0] = 'U';
