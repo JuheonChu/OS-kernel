@@ -1,4 +1,4 @@
-#define MAX_LIMIT 10 //maximum number of characters to be printed out for readString()
+#define MAX_LIMIT 80 //maximum number of characters to be printed out for readString()
 
 //define the prototypes of OS kernel functions
 void putChar(int row, int column, char ch, char color);
@@ -265,8 +265,9 @@ int handleInterrupt21(int ax, int bx, int cx, int dx){
     printString(ch+"\0");
     return 1;
   }else if(ax == 0x01){ //read characters from the keyboard until ENTER is pressed.
-    return readString(buf);
+    return readString(buf, 80);
   }else if(ax == 0x02){
+    printString("hi\0");
     return readSector(bx,cx);
   }
   else if(ax == 0x03){ //read in the Disk Directory from sector 2 and search it for indicated filename.

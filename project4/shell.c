@@ -3,6 +3,18 @@
 void recognizesUserCommand(char * command);
 
 
+typedef char byte;
+
+struct dirEntry{
+  char name[6]; 
+  byte sectors[26]; //26 sectors
+};
+
+struct directory{
+  struct dirEntry entries[16]; // notice that we have 16 entries
+};
+
+
 void main(){
   
   char * line = "\r\n\0";
@@ -23,7 +35,7 @@ void main(){
 void recognizesUserCommand(char * line, char * buffer){
 
   char errorMessage[25];
-  
+  struct directory diskDir;
   int x = 0; 
   int y = 0;
 
@@ -36,7 +48,7 @@ void recognizesUserCommand(char * line, char * buffer){
   int i = 5;
   int j = 8;
   int k = 0;
-
+  int z = 0;
   // type command
   if (line[0] == 't' && line[1] == 'y' &&
       line[2] == 'p' && line[3] == 'e' && line[4] == ' '){
@@ -112,11 +124,120 @@ void recognizesUserCommand(char * line, char * buffer){
     }
   }else if(line[0] == 'c' && line[1] == 'o' && line[2] == 'p' && line[3] == 'y' && line[4] == ' '){
 
-    copyFile(line);
+  char src[6];
+  char dest[6];
+  int numSectors;
 
-  } else if(line[0] == 'd' && line[1] == 'i' && line[2] == 'r'){
 
-    dir();
+  int sectors;
+
+  z = 0;
+  
+  for(z = 0; z < 6; z++){
+    src[z] = '\0';
+    dest[z] = '\0';
+  }
+
+   i = 5;
+   j = 7;
+   k = 0;
+   x = 0; // additional variable to keep track of the length of the file
+
+   while(line[i] != ' ' && k < 6){ //notice that filename cannot be more than 6 characters
+      /* read contents of <file> on screen.*/
+      src[k] = line[i];
+      i++;
+      k++;
+    }
+
+    src[k] = '\0';
+
+  
+    i++;
+    k = 0;
+    
+    while(line[i] != '\0' && k < 6){
+      dest[k] = line[i];
+      i++;
+      k++;
+    }
+
+  dest[k] = '\0';
+    
+  numSectors = 0;
+
+  numSectors = readfile(src, buffer); //read src file
+  
+  writeFileHelper(dest, buffer, numSectors);
+
+  
+
+  } else if(line[0] == 'd' && line[1] == 'i' && line[2] == 'r' && line[3] == '\0'){
+
+
+  int sectorBuffer[20];
+
+  int i,j,k,cnt;
+ 
+
+  i = 0;
+  j = 0;
+  k = 0;
+  cnt = 0;
+
+  
+  readSector(&diskDir, 0x02);
+
+    
+  for(i = 0; i < 16; i++){
+    if(diskDir.entries[i].name[0] != 0x00){ //found a file!
+
+      cnt = 0; //counting for number of sectors
+      
+      for(j = 0; j < 6 && diskDir.entries[i].name[j] != 0x00; j++){
+	fileName[j] = diskDir.entries[i].name[j];
+      }
+      fileName[j] = ' ';
+
+      for(k = i; i < 26 && diskDir.entries[i].sectors[k] != 0x00; k++){
+	cnt++;
+      }
+      //Also, cnt = readfile(fileName, buffer); can be another option,
+      //However, inner for-loop above doesn't cost too much so we just used it.
+
+      if(cnt > 9){
+	sectorBuffer[0] = cnt / 10;
+	sectorBuffer[1] = MOD(cnt,10);
+	fileName[j+1] = '0';
+	fileName[j+2] = '0';
+	fileName[j+3] = '0';
+	fileName[j+4] = '0'+sectorBuffer[0];
+	fileName[j+5] = '0'+sectorBuffer[1];
+	fileName[j+6] = '\r';
+	fileName[j+7] = '\0';
+	printString(fileName);
+
+	printString("\n\0");
+	 
+
+      }else{
+	sectorBuffer[0] = cnt;
+	fileName[j+1] = '0';
+	fileName[j+2] = '0';
+	fileName[j+3] = '0';
+	fileName[j+4] = '0';
+	fileName[j+5] = '0'+sectorBuffer[0];
+	fileName[j+6] = '\r';
+	fileName[j+7] = '\0';
+	printString(fileName);
+	printString("\n\0");
+      }
+
+      
+    }
+  
+  }
+
   }
   else{
     errorMessage[0] = 'U';
@@ -146,5 +267,3 @@ void recognizesUserCommand(char * line, char * buffer){
 
   
 }
-
-//utility I/O functions are stored at userLib
