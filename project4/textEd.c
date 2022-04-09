@@ -2,7 +2,8 @@
 
 void main(){
 
-    char fileName[20];
+    char * fileName = 0x00;
+    char helper[20];
     char buf[MAX_LIMIT];
     int numChars = 0;
     int index = 0; //cursor to keep track of the character in char * buf
@@ -13,11 +14,13 @@ void main(){
   ch = 0x00;
 
   printString("Enter a filename: \0");
-  numChars = readString();
+
+  fileName = readStringHelper(helper, 20);
+  fileName+='\0';
+  
   printString("\r\n\0");
   
   ch = readChar(); // a call to read the character.
-  //ch = readChar(); is also another way.
   
   while(ch != 0x04){ //we continue getting the inputs until ENTER key is hit.
     if(index >= MAX_LIMIT){ //if we are at the cursor position ahead of where we initially set as a limit
@@ -83,13 +86,14 @@ void main(){
     buf[index]=0x00; //added null termination 
 
 
-    printString("\r\n\0");
-    printString(buf);
     
+    printString("\r\n\0");
+   
 
     writeFile(fileName, buf, 10); //save the file
 
-    printStirng("\r\n\0");
+    
+    printString("\r\n\0");
 
     terminate(); //terminate
      

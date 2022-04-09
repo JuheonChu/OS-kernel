@@ -184,7 +184,8 @@ int readString(char * buf, int limit){
   }
 
  
-  buf[index]=0x00; //added null termination 
+  buf[index]=0x00; //added null termination
+  
   return index;
   
 }
