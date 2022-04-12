@@ -34,21 +34,19 @@ void main(){
 
 
   /*Testing for writeFile*/
-  //char buffer[13312];
+  char buffer[13312];
   
   //makeInterrupt21();
 
   /*read the file into buffer*/
  
-  //interrupt(0x21, 0x08, "testF\0", "my writeFile is working\0", 10);
+  // interrupt(0x21, 0x08, "adia\0", "my writeFile is working\0", 10);
 
   /*read a written file*/
-  //interrupt(0x21, 0x03, "testF\0", buffer, 0);
+  //interrupt(0x21, 0x03, "adia\0", buffer, 0);
   //interrupt(0x21, 0x00, buffer,0,0);
 
   /*Testing shell.c*/
-
-  char buffer[13312];
 
   makeInterrupt21();
 
@@ -429,7 +427,7 @@ int searchFile(struct directory * diskDir, char * filename){
       if (diskDir->entries[i].name[j] != filename[j]) {
 	break;
       }
-      if (j==5){
+      if(j == 5){
 	return i;
       }
     }
@@ -475,8 +473,8 @@ int readfile(char * filename, char * buffer){
       sectorCursor++;
       count+=512;
     }
-    entry = sectorCursor;
-    return entry;   // number of sectors read.
+    //entry = sectorCursor;
+    return sectorCursor;   // number of sectors read.
   }else{
     printString("File not found!\0");
     return -1;
@@ -543,6 +541,16 @@ void terminate(){
   executeProgram("shell\0", 0x2000); //execute shell.c
 }
 
+/**
+* @function writeSector: write on sector for writeFile functionality.
+*                        Accomplished using the same BIOS call as 
+*                        readSector (interrupt 0x13), with AH == 3.
+* 
+* @param char * buffer:  address of the buffer in which the data 
+*                        in the sector should be written.
+* @param int sector:     sector to which the buffer should be written.
+* @return 1 
+*/
 int writeSector(char * buffer, int sector){
   int relSector = MOD(sector, 18) + 1;
   int op = DIV(sector, 18);
@@ -555,7 +563,15 @@ int writeSector(char * buffer, int sector){
   return 1;
 }
 
-
+/**
+* @function deleteFile: Function to delete file using a two step process:
+*                       1) Sectors allocated to the file are marked free in Disk Map (0x00)
+*                       2) First character of the filename in Disk Directory is set to 0x00.
+*
+* @param char * fname:  Name of the file to be deleted.
+* @return 1:            if file is successfully deleted
+* @return -1:           if file is not found
+*/
 int deleteFile(char * fname){
   
   int i;
@@ -602,80 +618,115 @@ int deleteFile(char * fname){
       map.entries[entry].sectors[sector] = 0x00;
     }
     
+    // write Disk Map and Disk Sector back to disk to save changes.
     writeSector(&map,1);
     writeSector(&diskDir,2);
 
-    return 1;
-  }else{
+    return 1; // File found
+  }else{ 
     printString("File not found!\0");
-    return -1;
+    return -1; // File was not found.
   }
 }
 
-
-
+/**
+* @function writeFile:  Function to write into a free sector on the disk.
+*                       Modified Disk Directory and Disk Map written back
+*                       to disk to save changes. Writes sectors * 512 bytes
+*                       of data from buffer into file (fname). Overwrites the file
+*                       if file fname exists. Max number of sectors written is 26.
+*
+* @param char * fname:  name of file to be written.
+* @param char * buffer: pointer to buffer which is written into file fname.
+* @return sector:       the number of sectors
+* @return -1:           no Disk Directory available, so file not written.
+* @return -2:           no. of sectors in Disk Map < written sectors,
+*                       so write as many sectors. 
+*/
 int writeFile(char * fname, char * buffer, int sectors){
-
-
   char map[512];
   struct directory diskDir;
-  int i,j,k,sector, freeDirectoryIndex,flag;
 
-  //readSector(map,1);
-  readSector(&map,1);
+  int directoryEntry, i,j,k,idx, residue;
+  int fileNameLength = 0;
+
+  int sectorNum;
+
+  char helperFileBuffer[512];
+
+  int flag = -1; // to see if it found the free entry
+
+  int val;
+
+  /*Read the Map & Directory from Sectors*/
+  readSector(map,1);
   readSector(&diskDir,2);
 
-  
-  flag = -1;
-
-  for(i = 0; i < 16; i++){
-    if(diskDir.entries[i].name[0] == 0x00){
-     
-      freeDirectoryIndex = i;
+  /*Find a free directory entry*/
+  for(directoryEntry = 0; directoryEntry < 16; directoryEntry++){
+    //Found the free entry
+    if(diskDir.entries[directoryEntry].name[0] == 0x00){
       flag = 1;
-      for(j = 0; j < 6; j++){
-	diskDir.entries[i].name[j] = fname[j];
-      }
       break;
     }
   }
 
-
+  /*If there is no free directory*/
   if(flag == -1){
-    printString("no Disk Directory entry available for the file!\0");
+    printString("No Empty location available for the file!\0");
     return -1;
   }
 
-  sector = 0;
-  
-  flag = -2;
-  
-  while(i < 512  && sector < sectors){
-         
-      if(map[i] == 0x00){
-	flag = 1;
-	map[i] = 0xFF;
-	diskDir.entries[freeDirectoryIndex].sectors[sector] = i;
-	writeSector(buffer + sector * 512, i);
-	sector++;
-      }
-      i++;
+  /*Count the length of the filename*/
+  while(fname[fileNameLength] != '\0' && fname[fileNameLength] != 0x00){
+    fileNameLength++;
+  }
+
+  /*Assign the filename into the directory free entry*/
+  for(j = 0; j < fileNameLength; j++){
+    diskDir.entries[directoryEntry].name[j] = fname[j];
+  }
+
+  if(fileNameLength < 6){
+    residue = 6 - fileNameLength;
+
+    for(j = 0; j < residue; j++){
+      //fill the residues with 0x00
+      diskDir.entries[directoryEntry].name[j+fileNameLength] = 0x00; 
     }
-    
-   
-  
-
-  if(flag == -2){
-    printString("Insufficient free sectors to hold the file!\r\n\0");
-    return -2;
   }
 
-  for(i = sector; i < 26; i++){
-    diskDir.entries[freeDirectoryIndex].sectors[i] = 0x00;
+  /*Write the file contents into the sectors consisting of the file*/
+  for(k = 0; k < sectors; k++){
+    sectorNum = 0;
+
+    while(map[sectorNum] != 0x00){
+      sectorNum++;
+    }
+
+    //No free sectors to write the file
+    if(sectorNum == 26){
+      printString("Not enough space in the directory!\0");
+      return -2;
+    }
+
+    map[sectorNum] = 0xFF;
+
+    diskDir.entries[directoryEntry].sectors[k] = sectorNum;
+
+    /*Store the file sectors that the buffer is holding*/
+    for(j = 0; j < 512; j++){
+      val = k+1;
+      helperFileBuffer[j] = buffer[j*val];
+    }
+
+    writeSector(helperFileBuffer, sectorNum);
   }
 
+  /*Write the Map and Directory to the disk*/
   writeSector(map,1);
   writeSector(&diskDir,2);
-  
-  return 1;
+
+  //return the number of sectors to be written
+  return sectorNum;
 }

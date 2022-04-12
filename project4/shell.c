@@ -22,11 +22,13 @@ void main(){
   char buffer[13312]; //file buffer
   
   while(1){
-    clear(line);
+    //clear(line);
+    //clear(buffer);
     printString("Shell > \0");
     readString(line);
     printString("\r\n\0");
     recognizesUserCommand(line, buffer); //recognizes user command.
+    //clear(buffer);
     printString("\r\n\0");
     
   }
@@ -65,13 +67,19 @@ void recognizesUserCommand(char * line, char * buffer){
     }
 
     fileName[k] = '\0';
-    flagType = readfile(fileName, buffer);
+
+       
+   flagType =  readfile(fileName, buffer);
+
+   if(flagType == -1){
+     println("File does not exist!\0");
+     //printString(buffer);
+   }else{
+     printString(buffer);
+   }
     
-    if(flagType == -1){ // if file does not exist
-      printString("The file does not exists! \0");
-    }else{
-      printString(buffer);
-    }
+    
+     
 
     clear(buffer);
   }
@@ -117,10 +125,10 @@ void recognizesUserCommand(char * line, char * buffer){
     fileName[k] = '\0';
     printString(fileName);
 
-    flagDelete = deleteFile(fileName);
+    flagDelete = deleteFile(fileName); // remove specified file from Disk
 
     if(flagDelete == -1){
-      printString("file Not Found!\0");
+      printString("file Not Found!\0"); // File was not found on Disk
     }
   }else if(line[0] == 'c' && line[1] == 'o' && line[2] == 'p' && line[3] == 'y' && line[4] == ' '){
 
@@ -141,9 +149,8 @@ void recognizesUserCommand(char * line, char * buffer){
    i = 5;
    j = 7;
    k = 0;
-   x = 0; // additional variable to keep track of the length of the file
 
-   while(line[i] != ' ' && k < 6){ //notice that filename cannot be more than 6 characters
+   while(line[i] != ' '){ //notice that filename cannot be more than 6 characters
       /* read contents of <file> on screen.*/
       src[k] = line[i];
       i++;
@@ -156,7 +163,7 @@ void recognizesUserCommand(char * line, char * buffer){
     i++;
     k = 0;
     
-    while(line[i] != '\0' && k < 6){
+    while(line[i] != '\0'){
       dest[k] = line[i];
       i++;
       k++;
@@ -168,75 +175,36 @@ void recognizesUserCommand(char * line, char * buffer){
 
   numSectors = readfile(src, buffer); //read src file
   
-  writeFileHelper(dest, buffer, numSectors);
+  writeFileHelper(dest, buffer, numSectors); //write the file into the directory
 
   
-
+  clear(buffer);
+  
   } else if(line[0] == 'd' && line[1] == 'i' && line[2] == 'r' && line[3] == '\0'){
 
+    int index;
 
-  int sectorBuffer[20];
-
-  int i,j,k,cnt;
- 
-
-  i = 0;
-  j = 0;
-  k = 0;
-  cnt = 0;
-
-  
-  readSector(&diskDir, 0x02);
-
+    struct directory diskDir;
     
-  for(i = 0; i < 16; i++){
-    if(diskDir.entries[i].name[0] != 0x00){ //found a file!
+    int i,j;
 
-      cnt = 0; //counting for number of sectors
-      
-      for(j = 0; j < 6 && diskDir.entries[i].name[j] != 0x00; j++){
-	fileName[j] = diskDir.entries[i].name[j];
-      }
-      fileName[j] = ' ';
+    char fname[6];
+    char * buf;
 
-      for(k = i; i < 26 && diskDir.entries[i].sectors[k] != 0x00; k++){
-	cnt++;
-      }
-      //Also, cnt = readfile(fileName, buffer); can be another option,
-      //However, inner for-loop above doesn't cost too much so we just used it.
+    readSector(&diskDir, 2);
 
-      if(cnt > 9){
-	sectorBuffer[0] = cnt / 10;
-	sectorBuffer[1] = MOD(cnt,10);
-	fileName[j+1] = '0';
-	fileName[j+2] = '0';
-	fileName[j+3] = '0';
-	fileName[j+4] = '0'+sectorBuffer[0];
-	fileName[j+5] = '0'+sectorBuffer[1];
-	fileName[j+6] = '\r';
-	fileName[j+7] = '\0';
-	printString(fileName);
-
-	printString("\n\0");
-	 
-
-      }else{
-	sectorBuffer[0] = cnt;
-	fileName[j+1] = '0';
-	fileName[j+2] = '0';
-	fileName[j+3] = '0';
-	fileName[j+4] = '0';
-	fileName[j+5] = '0'+sectorBuffer[0];
-	fileName[j+6] = '\r';
-	fileName[j+7] = '\0';
-	printString(fileName);
-	printString("\n\0");
+    for(i = 0; i < 16; i++){
+      if(diskDir.entries[i].name[0] != 0x00){
+	buf = diskDir.entries[i].name;
+	buf[6] = '\0';
+	printString(buf);
+	printString("\n\r\0");
       }
 
-      
     }
-  
-  }
+
+    clear(buf);
+    
 
   }
   else{

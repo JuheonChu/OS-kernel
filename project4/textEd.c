@@ -1,101 +1,54 @@
-#define MAX_LIMIT 80
+#include "userlib.h"
 
+/**
+ * textEditor program
+ * Enter the filename and contents of that file
+ * @author John Chu & Amir Zawad & Adia Wu
+ * 
+ **/
 void main(){
 
-    char * fileName = 0x00;
-    char helper[20];
-    char buf[MAX_LIMIT];
-    int numChars = 0;
-    int index = 0; //cursor to keep track of the character in char * buf
-    char ch;
-    char readCh[2]; //helper character array to store the inputs.
-
-  readCh[1] = 0x00; // notice that every character or string has to finish with null pointer
-  ch = 0x00;
-
-  printString("Enter a filename: \0");
-
-  fileName = readStringHelper(helper, 20);
-  fileName+='\0';
-  
-  printString("\r\n\0");
-  
-  ch = readChar(); // a call to read the character.
-  
-  while(ch != 0x04){ //we continue getting the inputs until ENTER key is hit.
-    if(index >= MAX_LIMIT){ //if we are at the cursor position ahead of where we initially set as a limit
-      //buf[index]=0x00; //since we cannot assign any further input character, we can add a null termination.
-      ch = readChar();
-      if(ch == 0x08){ //even if our cursor hits the limit, we still need to allow the Backspace operation works
-	interrupt(0x10, 0x0E*256+0x08, 0, 0, 0);
-	index--;
-	buf[index]=' ';
-	//interrupt(0x10, 0x0E*256 + ch, 0, 0, 0);
-	interrupt(0x10, 0x0E*256+buf[index], 0, 0, 0);
-	interrupt(0x10, 0x0E*256+0x08, 0, 0, 0);
+        int rv = 0;
+        char file[13312];
+	char *fileOffset;
+	char line[81];
+	char filename[7];
+	int sectors;
 	
-      }else{
-	continue;
-      }
-    
-    }else if(ch == 0x08){ //Backspace/Delete key entered
-      if(index > 0){ //any index greater than 0 should allow the user to be able to delete the character that he/she previously typed.
-	interrupt(0x10, 0x0E*256+0x08, 0, 0, 0);
-	index--;
-	buf[index]=' ';
-	interrupt(0x10, 0x0E*256+buf[index], 0, 0, 0);
-	interrupt(0x10, 0x0E*256+0x08, 0, 0, 0);
-      }else{ //we don't have to do anything when there is no character in buf
-	if(index == 0){
-	  ch = readChar();
+	print("Enter filename: ");
+	read(filename, 6);
+	println("\n\r\0");
+
+	println(filename);
+	println("Do ctrl-D + Enter on its own line to quit\0");
+
+	
+	fileOffset = &file[0];
+	
+	while((fileOffset - file) < 13312) {
+	  
+	        rv = read(line,80); //read a line up to 80 characters
+		
+		 if (line[0] == 0x04) {	// ctrl-D to save the file
+			break;
+		}
+		
+		println("\0");  // go to the next line.
+		
+		strCpy(line, fileOffset, rv);
+		fileOffset = fileOffset + rv;
+		fileOffset[0] = '\n';
+		fileOffset[1] = '\r';
+		fileOffset = fileOffset + 2;
 	}
-	continue;
-      }
-   
-    }else if(ch == 0x0D){
-      if(index >= MAX_LIMIT){
-	ch = readChar();
-      }else if(index + 1 >= MAX_LIMIT){
-	buf[index] = '\n';
-	readCh[0] = ch;
-	printString("\r\n\0");
-	index++;
-      }else{
-
-	buf[index] = '\n';
-	buf[index+1] = '\r';
-	readCh[0] = ch;
-	printString("\r\n\0");
-	index++;
-	index++;
-      }
-    }
-
-    else{ //normal situation for typing characters with the keyboard
-      buf[index] = ch;
-      readCh[0] = ch;
-      printString(readCh); // it has to print readChar, not buf because buf is not terminated with null pointer yet.
-      index++; //move the cursor to the next index
-     
-    }
-    
-    ch = readChar();
-  }
-
- 
-    buf[index]=0x00; //added null termination 
-
-
-    
-    printString("\r\n\0");
-   
-
-    writeFile(fileName, buf, 10); //save the file
-
-    
-    printString("\r\n\0");
-
-    terminate(); //terminate
-     
-    
+	
+	sectors = ((fileOffset - file) / 512) + 1;
+	
+	writeFile(filename, file, sectors);
+	
+	println("\0");
+	
+	exit(); //terminate the textEdit program
 }
+ 
+

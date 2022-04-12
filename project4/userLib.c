@@ -1,7 +1,12 @@
 /*utility library functions*/
 #include "userlib.h"
 
-
+void backspace(int index, char * buf){
+   interrupt(0x10, 0x0E*256+0x08, 0, 0, 0);
+   buf[index]=' ';
+   interrupt(0x10, 0x0E*256+buf[index], 0, 0, 0);
+   interrupt(0x10, 0x0E*256+0x08, 0, 0, 0);
+}
 
 int printString(char * str){
   return interrupt(0x21, 0x00, str, 0, 0);
@@ -15,10 +20,10 @@ int readString(char * str, int limit){
   return interrupt(0x21, 0x01, str, 0, 0);
 }
 
-char* readStringHelper(char * str, int limit){
+char* readStringHelper(char * buf, int limit){
   char ch = 0x00;
   int index = 0;
-  char * buf = 0x00;
+
 
   char readCh[2];
 
@@ -70,9 +75,13 @@ char* readStringHelper(char * str, int limit){
   }
 
   buf[index] = 0x00;
-  //printString(buf);
+
+
+  
   return buf;
 }
+
+
 
 
 int readfile(char * filename, char * str){
@@ -94,9 +103,10 @@ void terminate(){
 
 void clear(char * buffer){
   int i = 0;
-  for(i = 0; i < 13312; i++){
+  for(i = 0; i < 13312 && buffer[i] != '\0'; i++){
     buffer[i] = 0x00;  // clear contents of buffer
   }
+  i = 0;
 }
 
 /**
@@ -104,13 +114,9 @@ void clear(char * buffer){
   * @author John chu, Amir Zawad, Adia Wu 
   */
 void writeFileHelper(char * dest, char * buffer, int numSectors){
-  //printString(dest);
   writeFile(dest+'\0', buffer, numSectors);
-  printString(buffer);
   clear(buffer);
 }
-
-
 
 
 int deleteFile(char * fname){
@@ -118,17 +124,14 @@ int deleteFile(char * fname){
 }
 
 int writeFile(char * fname, char * buffer, int sectors){
-  //printString("\r\n\0");
-  //printString(fname);
-  //printString("\r\n\0");
-  //printString(buffer);
-  return interrupt(0x21, 0x08, fname, buffer, sectors);
+    return interrupt(0x21, 0x08, fname, buffer, sectors);
 }
 
 int readSector(char * buffer, int absSector){
   // printString("readSector()\0");
   return interrupt(0x21, 0x02, buffer, absSector, 0); 
 }
+
 
 
 /* helper Function to return the remainder for modulus operation.
@@ -144,4 +147,31 @@ int MOD(int sector, int divisor){
     remainder = sector;
     return remainder;
 }
+int strCpy(char *str1, char *str2, int len) {
+	int i=0;
+	for (i=0; i<len; i++) {
+		str2[i] = str1[i];
+	}
+	return len;
+}
+void exit() {
+	interrupt(0x21, 0x05, 0, 0, 0);
+}
 
+int read(char *buf, int len) {
+	return interrupt(0x21, 0x01, buf, len, 0);
+}
+
+/*
+ * Print the string to the console.  str must be null terminated.
+ * Return the number of characters printed.
+ */
+int print(char *str) {
+	return interrupt(0x21, 0x00, str, 0, 0);
+}
+
+int println(char *str) {
+	int rv = print(str);
+	print("\n\r\0");
+	return rv;
+}

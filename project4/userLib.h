@@ -14,4 +14,4 @@ int readSector(char * filename, int absSector);
 void writeFileHelper(char * dest, char * buffer, int sectors);
 int writeFile(char * fname, char * buffer, int sectors);
 void dir();
-
+void backspace(int index, char * buffer);
