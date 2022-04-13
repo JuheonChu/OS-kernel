@@ -1,4 +1,4 @@
-#include "userlib.h"
+#include "userLib.h"
 
 /**
  * textEditor program
@@ -8,6 +8,7 @@
  **/
 void main(){
 
+  int flag = 0;
         int rv = 0;
         char file[13312];
 	char *fileOffset;
@@ -43,6 +44,7 @@ void main(){
 	}
 	
 	sectors = ((fileOffset - file) / 512) + 1;
+
 	
 	writeFile(filename, file, sectors);
 	

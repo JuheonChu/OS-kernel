@@ -17,6 +17,7 @@ void terminate();
 int writeSector(char * buffer, int sector);
 int deleteFile(char * fname);
 int writeFile(char * fname, char * buffer, int sectors);
+int writeFileHelper(char * fname, char * buffer, int sectors);
 
 typedef char byte;
 
@@ -581,7 +582,7 @@ int deleteFile(char * fname){
   int sectors[27];
   int sector;
 
-  struct directory map;
+  char map[512];
   struct directory diskDir;
 
   int entry = -1;
@@ -589,7 +590,8 @@ int deleteFile(char * fname){
 
   sector = 0;
 
-  readSector(&map,1);  // read Disk Directory from sector 1
+  /*read the sectors from the directory and map*/
+  readSector(map,1);  // read Disk Directory from sector 1
   readSector(&diskDir, 2);
 
   //search the disk directory and fine the fname
@@ -615,11 +617,11 @@ int deleteFile(char * fname){
 	break;
       }
 
-      map.entries[entry].sectors[sector] = 0x00;
+      map[sector]= 0x00;
     }
     
     // write Disk Map and Disk Sector back to disk to save changes.
-    writeSector(&map,1);
+    writeSector(map,1);
     writeSector(&diskDir,2);
 
     return 1; // File found
@@ -644,6 +646,17 @@ int deleteFile(char * fname){
 *                       so write as many sectors. 
 */
 int writeFile(char * fname, char * buffer, int sectors){
+
+  
+  return writeFileHelper(fname, buffer, sectors);
+    
+    
+  
+}
+
+
+int writeFileHelper(char * fname, char * buffer, int sectors){
+
   char map[512];
   struct directory diskDir;
 
@@ -653,6 +666,7 @@ int writeFile(char * fname, char * buffer, int sectors){
   int sectorNum;
 
   char helperFileBuffer[512];
+  char subBuffer[512];
 
   int flag = -1; // to see if it found the free entry
 
@@ -661,8 +675,8 @@ int writeFile(char * fname, char * buffer, int sectors){
   /*Read the Map & Directory from Sectors*/
   readSector(map,1);
   readSector(&diskDir,2);
-
-  /*Find a free directory entry*/
+  
+ /*Find a free directory entry*/
   for(directoryEntry = 0; directoryEntry < 16; directoryEntry++){
     //Found the free entry
     if(diskDir.entries[directoryEntry].name[0] == 0x00){

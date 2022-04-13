@@ -28,7 +28,6 @@ void main(){
     readString(line);
     printString("\r\n\0");
     recognizesUserCommand(line, buffer); //recognizes user command.
-    //clear(buffer);
     printString("\r\n\0");
     
   }
@@ -72,8 +71,7 @@ void recognizesUserCommand(char * line, char * buffer){
    flagType =  readfile(fileName, buffer);
 
    if(flagType == -1){
-     println("File does not exist!\0");
-     //printString(buffer);
+     println("File does not exist! \0");
    }else{
      printString(buffer);
    }
@@ -123,13 +121,15 @@ void recognizesUserCommand(char * line, char * buffer){
     }
 
     fileName[k] = '\0';
-    printString(fileName);
+    //printString(fileName);
 
     flagDelete = deleteFile(fileName); // remove specified file from Disk
 
     if(flagDelete == -1){
       printString("file Not Found!\0"); // File was not found on Disk
     }
+
+    clear(fileName);
   }else if(line[0] == 'c' && line[1] == 'o' && line[2] == 'p' && line[3] == 'y' && line[4] == ' '){
 
   char src[6];
@@ -175,7 +175,7 @@ void recognizesUserCommand(char * line, char * buffer){
 
   numSectors = readfile(src, buffer); //read src file
   
-  writeFileHelper(dest, buffer, numSectors); //write the file into the directory
+  writeFile(dest, buffer, numSectors); //write the file into the directory
 
   
   clear(buffer);

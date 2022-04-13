@@ -9,7 +9,7 @@ void type(char * command);
 int executeProgram(char * command, int segment);
 void terminate();
 void clear(char * buffer);
-int delete(char * fname);
+int deleteFile(char * fname);
 int readSector(char * filename, int absSector);
 void writeFileHelper(char * dest, char * buffer, int sectors);
 int writeFile(char * fname, char * buffer, int sectors);

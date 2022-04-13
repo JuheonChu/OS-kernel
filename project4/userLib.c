@@ -124,7 +124,9 @@ int deleteFile(char * fname){
 }
 
 int writeFile(char * fname, char * buffer, int sectors){
-    return interrupt(0x21, 0x08, fname, buffer, sectors);
+  deleteFile(fname);
+  interrupt(0x21, 0x08, fname+'\0', buffer, sectors);
+  return sectors;
 }
 
 int readSector(char * buffer, int absSector){
@@ -175,3 +177,4 @@ int println(char *str) {
 	print("\n\r\0");
 	return rv;
 }
+
