@@ -267,7 +267,6 @@ int handleInterrupt21(int ax, int bx, int cx, int dx){
   }else if(ax == 0x01){ //read characters from the keyboard until ENTER is pressed.
     return readString(buf, 80);
   }else if(ax == 0x02){
-    printString("hi\0");
     return readSector(bx,cx);
   }
   else if(ax == 0x03){ //read in the Disk Directory from sector 2 and search it for indicated filename.
@@ -277,7 +276,7 @@ int handleInterrupt21(int ax, int bx, int cx, int dx){
   }else if(ax == 0x05){
     terminate();
   }else if(ax == 0x07){
-    return deleteFile(bx);
+    return deleteFile(buf);
   }else if(ax == 0x08){
     return writeFile(bx,cx,dx);
   }
@@ -551,6 +550,7 @@ void terminate(){
 *                        in the sector should be written.
 * @param int sector:     sector to which the buffer should be written.
 * @return 1 
+* @author John Chu & Amir Zawad & Adia Wu
 */
 int writeSector(char * buffer, int sector){
   int relSector = MOD(sector, 18) + 1;
@@ -572,6 +572,7 @@ int writeSector(char * buffer, int sector){
 * @param char * fname:  Name of the file to be deleted.
 * @return 1:            if file is successfully deleted
 * @return -1:           if file is not found
+* @author John Chu & Amir Zawad & Adia Wu
 */
 int deleteFile(char * fname){
   
@@ -589,6 +590,8 @@ int deleteFile(char * fname){
  
 
   sector = 0;
+
+  printString("delete in kernel\0");
 
   /*read the sectors from the directory and map*/
   readSector(map,1);  // read Disk Directory from sector 1
@@ -624,10 +627,10 @@ int deleteFile(char * fname){
     writeSector(map,1);
     writeSector(&diskDir,2);
 
-    return 1; // File found
+    return 1; // Successfully deleted
   }else{ 
     printString("File not found!\0");
-    return -1; // File was not found.
+    return -1; 
   }
 }
 
@@ -643,19 +646,11 @@ int deleteFile(char * fname){
 * @return sector:       the number of sectors
 * @return -1:           no Disk Directory available, so file not written.
 * @return -2:           no. of sectors in Disk Map < written sectors,
-*                       so write as many sectors. 
+*                       so write as many sectors.
+* @author John chu & Amir Zawad & Adia Wu 
 */
+
 int writeFile(char * fname, char * buffer, int sectors){
-
-  
-  return writeFileHelper(fname, buffer, sectors);
-    
-    
-  
-}
-
-
-int writeFileHelper(char * fname, char * buffer, int sectors){
 
   char map[512];
   struct directory diskDir;
@@ -672,6 +667,9 @@ int writeFileHelper(char * fname, char * buffer, int sectors){
 
   int val;
 
+  /*if there exists a filename with "fname" already, then we will overwrite*/
+  deleteFile(fname);
+  
   /*Read the Map & Directory from Sectors*/
   readSector(map,1);
   readSector(&diskDir,2);

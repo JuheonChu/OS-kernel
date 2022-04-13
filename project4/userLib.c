@@ -120,12 +120,13 @@ void writeFileHelper(char * dest, char * buffer, int numSectors){
 
 
 int deleteFile(char * fname){
+  
   return interrupt(0x21, 0x07, fname, 0, 0);
 }
 
 int writeFile(char * fname, char * buffer, int sectors){
   deleteFile(fname);
-  interrupt(0x21, 0x08, fname+'\0', buffer, sectors);
+  interrupt(0x21, 0x08, fname, buffer, sectors);
   return sectors;
 }
 

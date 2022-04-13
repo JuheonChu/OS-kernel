@@ -9,12 +9,12 @@
 void main(){
 
   int flag = 0;
-        int rv = 0;
-        char file[13312];
-	char *fileOffset;
-	char line[81];
-	char filename[7];
-	int sectors;
+  int rv = 0; //cursor of each file buffer character
+  char file[13312]; //file Buffer
+  char *fileOffset; //keeping track of each line of the file
+  char line[81]; //each line of the file
+  char filename[7]; // user-typed filename
+  int sectors; //sectors to be passed for writeFile
 	
 	print("Enter filename: ");
 	read(filename, 6);
@@ -45,6 +45,9 @@ void main(){
 	
 	sectors = ((fileOffset - file) / 512) + 1;
 
+	//deleteFile(filename);
+
+	interrupt(0x21, 0x07, filename, 0, 0);
 	
 	writeFile(filename, file, sectors);
 	
