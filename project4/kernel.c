@@ -17,7 +17,7 @@ void terminate();
 int writeSector(char * buffer, int sector);
 int deleteFile(char * fname);
 int writeFile(char * fname, char * buffer, int sectors);
-int writeFileHelper(char * fname, char * buffer, int sectors);
+
 
 typedef char byte;
 
@@ -667,8 +667,6 @@ int writeFile(char * fname, char * buffer, int sectors){
 
   int val;
 
-  /*if there exists a filename with "fname" already, then we will overwrite*/
-  deleteFile(fname);
   
   /*Read the Map & Directory from Sectors*/
   readSector(map,1);
