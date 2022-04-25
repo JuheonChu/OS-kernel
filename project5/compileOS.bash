@@ -28,14 +28,15 @@ bcc -ansi -c -o proc.o proc.c
 as86 kernel.asm -o kernel_asm.o
 as86 lib.asm -o lib.o
 
+
 #link the object files and place the resulting executable file on the disk
 ld86 -o kernel -d kernel.o kernel_asm.o
 ld86 -o uprog1 -d uprog1.o lib.o
 ld86 -o uprog2 -d uprog2.o lib.o 
-#ld86 -o shell -d shell.o lib.o 
 ld86 -o shell -d shell.o userLib.o lib.o
 ld86 -o textEd -d textEd.o userLib.o lib.o
-ld86 -o proc -d proc.o userlib.o lib.o 
+ld86 -o proc -d proc.o kernel_asm.o
+
 
 #copy the kernel file into the disk image at sector 3 
 dd if=kernel of=floppya.img bs=512 conv=notrunc seek=3

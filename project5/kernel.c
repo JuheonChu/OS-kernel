@@ -1,6 +1,7 @@
 #define MAX_LIMIT 80 //maximum number of characters to be printed out for readString()
 #define MAIN
-#include "prog.c"
+
+#include "proc.h"
 
 //define the prototypes of OS kernel functions
 void putChar(int row, int column, char ch, char color);
@@ -34,9 +35,7 @@ struct directory{
 
 void main(){
 
-  
-
-
+ 
   /*Testing for writeFile*/
   //char buffer[13312];
   
