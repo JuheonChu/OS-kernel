@@ -1,4 +1,6 @@
 #define MAX_LIMIT 80 //maximum number of characters to be printed out for readString()
+#define MAIN
+#include "prog.c"
 
 //define the prototypes of OS kernel functions
 void putChar(int row, int column, char ch, char color);
@@ -49,13 +51,13 @@ void main(){
   //interrupt(0x21, 0x00, buffer,0,0);
 
   /*Testing shell.c*/
-
-  
   
     makeInterrupt21();
-    // initializeProcStructures();
+  
     handleInterrupt21(0x04,"shell\0",0,0);
     makeTimerInterrupt();
+
+    initializeProcStructures();
   
   while(1); //infinite loop
 }//
