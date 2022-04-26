@@ -1,4 +1,4 @@
-#define MAX_LIMIT 80 //maximum number of characters to be printed out for readString()
+
 #define MAIN
 
 #include "proc.h"
@@ -15,7 +15,7 @@ int readSector(char * buf, int absSector);
 int handleInterrupt21(int ax, int bx, int cx, int dx);
 char* printInt(int x);
 int readfile(char * filename, char * buf);
-int executeProgram(char * name, int segment);
+int executeProgram(char * fname);
 void terminate();
 int writeSector(char * buffer, int sector);
 int deleteFile(char * fname);
@@ -44,12 +44,12 @@ void main(){
     makeInterrupt21();
   
     handleInterrupt21(0x04,"shell\0",0,0);
-    makeTimerInterrupt();
+     makeTimerInterrupt();
 
     initializeProcStructures();
   
   while(1); //infinite loop
-}//
+}
 
 
 /** print out the character at (row, column) in our video memory
@@ -75,7 +75,10 @@ void putStr(int row, int column, char * str, char color){
 }
 
 
-/** this will print out the string returning how many characters in string we have in &str
+/** 
+ * This will print out the string returning how many characters in string we * have in &str
+ * 
+ * @author John Chu & Adia Wu
  * @param char * str: the character to be printed out 
  * @return count (return the number of characters in the str)
  */
@@ -237,10 +240,11 @@ int DIV(int absSector, int divisor){ //ex. 32 / 4
   }
 
 
-/* Creating the System Call Interface.
- * Depending on the value of ax, handleInterrupt21 will perform a diferent system call.
+/**
+ * Creating the System Call Interface.
+ * Depending on the value of ax, handleInterrupt21 will perform a diferent s * ystem call.
  * @param int ax, int bx, int cx, int dx
- * ax will be used to indicate which service is being requested, and bx,cx, and dx are used as the * address of a string to print, a buffer to fill or the number of the sector to be read)
+ * ax will be used to indicate which service is being requested, and bx,cx,  * and dx are used as the address of a string to print, a buffer to fill o * r the number of the sector to be read)
  */
 int handleInterrupt21(int ax, int bx, int cx, int dx){
 
@@ -490,30 +494,52 @@ int readfile(char * filename, char * buffer){
  * @return 1 if program cannot be executed.
  * @author John Chu, Amir Zawad, Adia Wu
  */
-int executeProgram(char * name, int segment){
+int executeProgram(char * fname){
 
   int index = 0;
   char buffer[13312]; //maximum size of the program file
-  int file;
+  int numSectors; //number of sectors read from the file "fname"
+  int segment; // a place where we will load PCB
 
-  file = readfile(name, buffer);
+  struct PCB process; 
 
-  if(file == -1){ //when file is not found
+  numSectors = readfile(fname, buffer); 
+
+  if(numSectors == -1){ //when file is not found
     printString("program was not found \0");
     return -1;
   }
 
-  if(segment == 0x0000 || segment >= 0xA000 || segment == 0x1000){
-    printString("Invalid segment\0");  // if segment is invalid
-    return -2; 
+  //if(segment == 0x0000 || segment >= 0xA000 || segment == 0x1000){
+  //printString("Invalid segment\0");  // if segment is invalid
+  //return -2; 
+  //}
+
+  segment = getFreeMemorySegment();
+
+
+  if(segment == -1){
+    printString("Invalid Segment!\0");
+    return -2;
   }
+
+  // Obtain a PCB from the ready queue
+
+  process = *(getFreePCB());
+
+  process.name = fname;
+  process.state = STARTING;
+  process.stackPointer = 0xFF00; // set the stack pointer to 0xFF00
   
-  while(index < 13312){
+  
+  while(index < (numSectors * 512)){
      putInMemory(segment, index, buffer[index]);
      index++;
   }
 
-  launchProgram(segment); //now user program takes the control
+  //launchProgram(segment); //now user program takes the control
+
+  initializeProgram(segment);
   
   return 1; //if it reaches here.. then we cannot execute the program 
 }
@@ -739,9 +765,8 @@ int writeFile(char * fname, char * buffer, int sectors){
 
 
 void handleTimerInterrupt(int segment, int sp) {
-	
-  printString("tic\0");
-  //  returnFromTimer(segment,sp);
+
+   returnFromTimer(segment,sp);
 }
 
 
