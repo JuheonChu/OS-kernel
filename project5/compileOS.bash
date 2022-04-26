@@ -39,7 +39,7 @@ as86 lib.asm -o lib.o
 
 
 #link the object files and place the resulting executable file on the disk
-ld86 -o kernel -d kernel.o proc.o userLib.o kernel_asm.o
+ld86 -o kernel -d kernel.o kernel_asm.o proc.o
 ld86 -o uprog1 -d uprog1.o lib.o
 ld86 -o uprog2 -d uprog2.o lib.o 
 ld86 -o shell -d shell.o userLib.o lib.o

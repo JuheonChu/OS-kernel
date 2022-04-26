@@ -37,18 +37,8 @@ void main(){
 
  
   /*Testing for writeFile*/
-  //char buffer[13312];
-  
-  //makeInterrupt21();
-
-  /*read the file into buffer*/
  
-  // interrupt(0x21, 0x08, "adia\0", "my writeFile is working\0", 10);
-
-  /*read a written file*/
-  //interrupt(0x21, 0x03, "adia\0", buffer, 0);
-  //interrupt(0x21, 0x00, buffer,0,0);
-
+ 
   /*Testing shell.c*/
   
     makeInterrupt21();
@@ -75,6 +65,7 @@ void putChar(int row, int column, char ch, char color){
 /** print out the string at (row, column) in our video memory
  *  @param int row, int column, char * str, char color
  */
+
 void putStr(int row, int column, char * str, char color){
   while(*str != '\0'){
     putChar(row, column, *str, color);
