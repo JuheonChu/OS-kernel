@@ -556,6 +556,9 @@ int executeProgram(char * fname){
   restoreDataSegment();
   
   kStrcpy(fname, process->name);
+
+  //printString(fname); shell
+  //printString(proces->name); shell
   
   process->state = STARTING; //set the process state to STARTING
   process->stackPointer = 0xFF00; // set the stack pointer to 0xFF00
@@ -568,9 +571,11 @@ int executeProgram(char * fname){
   }
 
    
-  initializeProgram(segment);
+  //initializeProgram(segment);
+
+  launchProgram(segment);
   
-  return 1; //if it reaches here.. then we cannot execute the program 
+  return 1; 
 }
 
 
@@ -591,10 +596,11 @@ void terminate(){
   //free the memory segment that is using
   releaseMemorySegment(running);
 
+
   //free the PCB that is using
   releasePCB(running);
 
-  restoreDataSegment();
+
 
   //set the state of the running PCB to DEFUNCT
   running->state = DEFUNCT;
@@ -825,6 +831,7 @@ void handleTimerInterrupt(int segment, int sp) {
 
   setKernelDataSegment();
 
+ 
   //STEP 1: Save the current process
   if(running != NULL){
     running->segment = segment;
@@ -842,7 +849,10 @@ void handleTimerInterrupt(int segment, int sp) {
   if(running == &idleProc){
     running == NULL;
   }else{
-    addToReady(running);
+    //We cannot add Defunct running process to the ready queue
+    if(running->state != DEFUNCT){
+      addToReady(running);
+    }
   }
 
   restoreDataSegment();
@@ -872,11 +882,6 @@ void handleTimerInterrupt(int segment, int sp) {
   newSegment = removeHead->segment;
 
   newSp = removeHead->stackPointer;
-
-  
-  
-
-  //schedule the running process
 
   running = removeHead;
 
