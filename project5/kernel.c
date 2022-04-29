@@ -42,11 +42,13 @@ void main(){
  
   /*Testing shell.c*/
 
+  initializeProcStructures();
+
     makeInterrupt21();
 
-    initializeProcStructures();
+    
   
-    handleInterrupt21(0x04,"shell\0",0,0);
+    handleInterrupt21(0x04,"shell\0",0x2000,0);
     makeTimerInterrupt();
 
   
@@ -275,7 +277,7 @@ int handleInterrupt21(int ax, int bx, int cx, int dx){
   else if(ax == 0x03){ //read in the Disk Directory from sector 2 and search it for indicated filename.
    return readfile(bx, cx);
   }else if(ax == 0x04){
-    return executeProgram(bx, cx);
+    return executeProgram(bx);
   }else if(ax == 0x05){
     terminate();
   }else if(ax == 0x07){
@@ -485,7 +487,7 @@ int readfile(char * filename, char * buffer){
 }
 
 /**
- * A helper function to copy the string from str2 to str1
+ * A helper function to copy the string from src to dest
  * 
  * @param char * src, char * dest
  * @return 1 
@@ -533,9 +535,13 @@ int executeProgram(char * fname){
     printString("program was not found \0");
     return -1;
   }
+
+  setKernelDataSegment();
   
   segIdx = getFreeMemorySegment();
 
+  restoreDataSegment();
+  
   if(segIdx == -1){
     printString("Invalid segment!\0");
     return -2;
@@ -548,22 +554,20 @@ int executeProgram(char * fname){
   setKernelDataSegment();
   process = getFreePCB(); //get the available process
   restoreDataSegment();
-
-  kStrcpy(fname, process->name);
-
-  //printString(process->name);
   
-  process->state = STARTING;
+  kStrcpy(fname, process->name);
+  
+  process->state = STARTING; //set the process state to STARTING
   process->stackPointer = 0xFF00; // set the stack pointer to 0xFF00
 
- 
+
+  
   while(index < (numSectors * 512)){
      putInMemory(segment, index, buffer[index]);
      index++;
   }
 
-  //launchProgram(segment); //user program takes the control
-
+   
   initializeProgram(segment);
   
   return 1; //if it reaches here.. then we cannot execute the program 
@@ -579,9 +583,10 @@ int executeProgram(char * fname){
 void terminate(){
 
   /*reset segment registers and the stack pointer to memory segment containing kernel (0x1000)*/
-  resetSegments();
-  
+
   setKernelDataSegment();
+  
+
   
   //free the memory segment that is using
   releaseMemorySegment(running);
@@ -593,6 +598,8 @@ void terminate(){
 
   //set the state of the running PCB to DEFUNCT
   running->state = DEFUNCT;
+
+  restoreDataSegment();
 
   while(1);
 }
@@ -809,35 +816,72 @@ int writeFile(char * fname, char * buffer, int sectors){
 void handleTimerInterrupt(int segment, int sp) {
 
   int i;
-  struct PCB process;
+  
+  //struct PCB process;
 
   struct PCB * removeHead;
 
+  int newSegment, newSp;
+
+  setKernelDataSegment();
+
+  //STEP 1: Save the current process
+  if(running != NULL){
+    running->segment = segment;
+    running->stackPointer = sp;
+    running->state = READY;
+   
+  }
+
+  restoreDataSegment();
+
+
+  setKernelDataSegment(); 
+
+  // STEP 2: Check if the running process is the idle process
+  if(running == &idleProc){
+    running == NULL;
+  }else{
+    addToReady(running);
+  }
+
+  restoreDataSegment();
+  
   // If ready queue is empty, then we should schedule an idle process.
   if(readyHead == NULL){
     idleProc.state = RUNNING;
     running = &idleProc; //idle Process scheduled
   }
 
-  //assign state, stackPointer and enqueue to the ready queue.
+
+
+  setKernelDataSegment();
+  //STEP 4: remove the head PCB of the ready queue (RR algorithm)
+  removeHead = removeFromReady();
+
+  restoreDataSegment();
   
-  running->stackPointer = sp;
+  if(removeHead == NULL){
+    removeHead = &idleProc;
+  }
 
-  running->state = READY;
-
-  addToReady(running);
-
-  //remove the head PCB of the ready queue (RR algorithm)
-  removeHead = removeFromReady(); 
 
   removeHead->state = RUNNING;
+
+
+  newSegment = removeHead->segment;
+
+  newSp = removeHead->stackPointer;
+
+  
+  
 
   //schedule the running process
 
   running = removeHead;
 
-  
-  returnFromTimer(segment,sp);
+
+  returnFromTimer(newSegment,newSp);
 }
 
 
