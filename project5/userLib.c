@@ -158,7 +158,9 @@ int strCpy(char *str1, char *str2, int len) {
 	return len;
 }
 void exit() {
+  //print("Hi\0");
 	interrupt(0x21, 0x05, 0, 0, 0);
+	
 }
 
 int read(char *buf, int len) {
