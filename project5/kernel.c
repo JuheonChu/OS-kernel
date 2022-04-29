@@ -15,6 +15,7 @@ int readSector(char * buf, int absSector);
 int handleInterrupt21(int ax, int bx, int cx, int dx);
 char* printInt(int x);
 int readfile(char * filename, char * buf);
+int strcpy(char * str1, char * str2);
 int executeProgram(char * fname);
 void terminate();
 int writeSector(char * buffer, int sector);
@@ -40,13 +41,15 @@ void main(){
  
  
   /*Testing shell.c*/
-  
+
     makeInterrupt21();
-  
-    handleInterrupt21(0x04,"shell\0",0,0);
-     makeTimerInterrupt();
 
     initializeProcStructures();
+  
+    handleInterrupt21(0x04,"shell\0",0,0);
+    makeTimerInterrupt();
+
+  
   
   while(1); //infinite loop
 }
@@ -481,6 +484,22 @@ int readfile(char * filename, char * buffer){
   }
 }
 
+/**
+ * A helper function to copy the string from str2 to str1
+ * 
+ * @param char * src, char * dest
+ * @return 1 
+ */
+int strcpy(struct PCB * process, char * fname) {
+  int i=0;
+  
+	while(fname[i] != '\0') {
+		process->name[i] = fname[i];
+		i++;
+	}
+	return 1;
+}
+
 
 /**
  * Uses readFile function to load executable file (given by char * name)
@@ -496,48 +515,52 @@ int readfile(char * filename, char * buffer){
  */
 int executeProgram(char * fname){
 
-  int index = 0;
+  int index;
   char buffer[13312]; //maximum size of the program file
   int numSectors; //number of sectors read from the file "fname"
+  int segIdx;
   int segment; // a place where we will load PCB
 
-  struct PCB process; 
+  struct PCB *process; 
 
+  index = 0;
+  
   numSectors = readfile(fname, buffer); 
 
   if(numSectors == -1){ //when file is not found
     printString("program was not found \0");
     return -1;
   }
+  
+  segIdx = getFreeMemorySegment();
 
-  //if(segment == 0x0000 || segment >= 0xA000 || segment == 0x1000){
-  //printString("Invalid segment\0");  // if segment is invalid
-  //return -2; 
-  //}
-
-  segment = getFreeMemorySegment();
-
-
-  if(segment == -1){
-    printString("Invalid Segment!\0");
+  if(segIdx == -1){
+    printString("Invalid segment!\0");
     return -2;
   }
 
-  // Obtain a PCB from the ready queue
+  segment = 0x2000 + (segIdx * 0x1000); //0x1000 = 4096
 
-  process = *(getFreePCB());
+  // Obtain a DEFUNCT PCB 
 
-  process.name = fname;
-  process.state = STARTING;
-  process.stackPointer = 0xFF00; // set the stack pointer to 0xFF00
+ 
+  process = getFreePCB(); //get the available process
+  //addToReady(process);
+
+  strcpy(process, fname);
+
+  //printString(process->name);
   
-  
+  process->state = STARTING;
+  process->stackPointer = 0xFF00; // set the stack pointer to 0xFF00
+
+ 
   while(index < (numSectors * 512)){
      putInMemory(segment, index, buffer[index]);
      index++;
   }
 
-  //launchProgram(segment); //now user program takes the control
+  //launchProgram(segment); //user program takes the control
 
   initializeProgram(segment);
   
@@ -556,11 +579,16 @@ void terminate(){
   /*reset segment registers and the stack pointer to memory segment containing kernel (0x1000)*/
   resetSegments();
   
-  printString("I'm back!\0");
-  printString("\r\n\0");
-  /*while(1);*/
+  //free the memory segment that is using
+  releaseMemorySegment(running);
 
-  executeProgram("shell\0", 0x2000); //execute shell.c
+  //free the PCB that is using
+  releasePCB(running);
+
+  //set the state of the running PCB to DEFUNCT
+  running->state = DEFUNCT;
+
+  while(1);
 }
 
 /**
@@ -763,10 +791,47 @@ int writeFile(char * fname, char * buffer, int sectors){
   return sectorNum;
 }
 
-
+/**
+ * OS schedules processes using round-robin scheduling.
+ * handleTimerInterrupt(segment, sp) will occur each time a timer interrupt occurs.
+ * segment and stackpointer of the process that was interrupted will be passed to save
+ * the running process.
+ * 
+ * @param int segment, int sp
+ * @author John Chu & Amir Zawad & Adia Wu
+ */
 void handleTimerInterrupt(int segment, int sp) {
 
-   returnFromTimer(segment,sp);
+  int i;
+  struct PCB process;
+
+  struct PCB * removeHead;
+
+  // If ready queue is empty, then we should schedule an idle process.
+  if(running->state == DEFUNCT || readyHead == NULL){
+    idleProc.state = RUNNING;
+    running = &idleProc; //idle Process scheduled
+  }
+
+  //assign state, stackPointer and enqueue to the ready queue.
+  
+  running->stackPointer = sp;
+
+  running->state = READY;
+
+  addToReady(running);
+
+  //remove the head PCB of the ready queue (RR algorithm)
+  removeHead = removeFromReady(); 
+
+  removeHead->state = RUNNING;
+
+  //schedule the running process
+
+  running = removeHead;
+
+  
+  returnFromTimer(segment,sp);
 }
 
 

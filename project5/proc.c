@@ -3,18 +3,19 @@
 /**
  * This function initializes all of the global variables and 
  * structures defined in "proc.h"
+ * 
+ * @author John Chu & Amir Zawad & Adia Wu
  */
 void initializeProcStructures(){
   //1. All entries in the memory map should be marked as FREE
   int cursor = 0;
 
-  while(cursor < 8){
+  for(cursor = 0; cursor < 8; cursor++){
     memoryMap[cursor] = FREE; //FREE = 0x00
     pcbPool[cursor].name[0] = NULL; //first character of the name in the PCB in the PCB pool should be NULL
     pcbPool[cursor].state = DEFUNCT; //state in the PCB in the PCB pool set to DEFUNCT
     pcbPool[cursor].segment = 0x0000; //segment in the PCB in the PCB pool set to 0x0000
     pcbPool[cursor].stackPointer = 0x0000; //stackPointer in the PCB in the PCB pool set to 0x0000
-    cursor++;
   }
 
   /*The PCB for the idle process should be initialized with name 'IDLE', state 'Ready', and segments & stackpointers set to 0x000 */ 
@@ -71,6 +72,7 @@ int getFreeMemorySegment(){
 void releaseMemorySegment(int seg){
   int releaseSegment;
 
+  // seg corresponds from 0x2000 to 0x8000
   if(seg == 0x2000){
     releaseSegment = 0;
   }else if(seg == 0x3000){
@@ -143,7 +145,7 @@ void releasePCB(struct PCB *pcb){
  * @author John Chu & Amir Zawad & Adia Wu
  */
 void addToReady(struct PCB *pcb){
-  // Works like a Singly Linked List
+  // Works like a Doubly Linked List
     pcb->prev = readyTail;
     readyTail->next = pcb;
     readyTail = pcb; //pcb is the tail of the readyqueue
