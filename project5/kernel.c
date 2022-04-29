@@ -15,7 +15,7 @@ int readSector(char * buf, int absSector);
 int handleInterrupt21(int ax, int bx, int cx, int dx);
 char* printInt(int x);
 int readfile(char * filename, char * buf);
-int strcpy(char * str1, char * str2);
+int kStrcpy(char * src, char * dest);
 int executeProgram(char * fname);
 void terminate();
 int writeSector(char * buffer, int sector);
@@ -490,13 +490,15 @@ int readfile(char * filename, char * buffer){
  * @param char * src, char * dest
  * @return 1 
  */
-int strcpy(struct PCB * process, char * fname) {
+int kStrcpy(char * src, char * dest) {
   int i=0;
   
-	while(fname[i] != '\0') {
-		process->name[i] = fname[i];
-		i++;
-	}
+	while(src[i] != '\0') {
+	  putInMemory(0x1000, dest+i, src[i]);
+	  i++;
+     	}
+
+	dest[i] = 0x00;
 	return 1;
 }
 
@@ -543,11 +545,11 @@ int executeProgram(char * fname){
 
   // Obtain a DEFUNCT PCB 
 
- 
+  setKernelDataSegment();
   process = getFreePCB(); //get the available process
-  //addToReady(process);
+  restoreDataSegment();
 
-  strcpy(process, fname);
+  kStrcpy(fname, process->name);
 
   //printString(process->name);
   
@@ -579,11 +581,15 @@ void terminate(){
   /*reset segment registers and the stack pointer to memory segment containing kernel (0x1000)*/
   resetSegments();
   
+  setKernelDataSegment();
+  
   //free the memory segment that is using
   releaseMemorySegment(running);
 
   //free the PCB that is using
   releasePCB(running);
+
+  restoreDataSegment();
 
   //set the state of the running PCB to DEFUNCT
   running->state = DEFUNCT;
@@ -808,7 +814,7 @@ void handleTimerInterrupt(int segment, int sp) {
   struct PCB * removeHead;
 
   // If ready queue is empty, then we should schedule an idle process.
-  if(running->state == DEFUNCT || readyHead == NULL){
+  if(readyHead == NULL){
     idleProc.state = RUNNING;
     running = &idleProc; //idle Process scheduled
   }
