@@ -20,10 +20,14 @@ void main(){
   char * line = "\r\n\0";
   
   char buffer[13312]; //file buffer
+
+
+  //enableInterrupts();
   
   while(1){
     //clear(line);
     //clear(buffer);
+    
     printString("Shell > \0");
     readString(line);
     printString("\r\n\0");

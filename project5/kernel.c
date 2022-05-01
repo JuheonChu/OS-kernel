@@ -559,11 +559,11 @@ int executeProgram(char * fname){
 
   //printString(fname); shell
   //printString(proces->name); shell
-  
+  process->segment = segment;
   process->state = STARTING; //set the process state to STARTING
   process->stackPointer = 0xFF00; // set the stack pointer to 0xFF00
 
-
+  addToReady(process);
   
   while(index < (numSectors * 512)){
      putInMemory(segment, index, buffer[index]);
@@ -571,9 +571,9 @@ int executeProgram(char * fname){
   }
 
    
-  //initializeProgram(segment);
+  initializeProgram(segment);
 
-  launchProgram(segment);
+  //launchProgram(segment);
   
   return 1; 
 }
@@ -588,6 +588,8 @@ int executeProgram(char * fname){
 void terminate(){
 
   /*reset segment registers and the stack pointer to memory segment containing kernel (0x1000)*/
+
+  // resetSegments();
 
   setKernelDataSegment();
   

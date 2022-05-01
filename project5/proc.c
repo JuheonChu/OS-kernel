@@ -103,25 +103,16 @@ void releaseMemorySegment(int seg){
  **/
 struct PCB *getFreePCB(){
 
-  int free = NULL;
   int i;
 
-  for(i = 0; i < 8; i++){
+  for(i = 0; i < 8;i++){
     if(pcbPool[i].state == DEFUNCT){
-      free = i;
-      break;
+      pcbPool[i].state = STARTING;
+	return pcbPool+i;
     }
   }
 
-  //The returned PCB should be marked as STARTING 
-  pcbPool[free].state = STARTING;
-
-  //Return NULL if there are no PCBs available. Otherwise, return a pointer to an available PCB from the PCB pool
-  if(free == NULL){
-    return NULL;
-  }else{ 
-    return &pcbPool[free];
-  }
+  return NULL;
 }
 
 /**
@@ -145,11 +136,19 @@ void releasePCB(struct PCB *pcb){
  * @author John Chu & Amir Zawad & Adia Wu
  */
 void addToReady(struct PCB *pcb){
-  // Works like a Doubly Linked List
-    pcb->prev = readyTail;
+
+  //When the ready queue is empty;
+  if(readyHead == NULL){
+    readyHead = pcb;
+    readyTail = pcb;
+    pcb->next = NULL;
+    pcb->prev = NULL;
+  }else{ //When Ready queue already have PCB
     readyTail->next = pcb;
-    readyTail = pcb; //pcb is the tail of the readyqueue
-    readyTail->next = NULL; 
+    pcb->prev = readyTail;
+    pcb->next = NULL;
+    readyTail = pcb;
+  }
 }
 
 /**
@@ -161,12 +160,21 @@ void addToReady(struct PCB *pcb){
 struct PCB *removeFromReady(){
   struct PCB *removePCB;
 
-  removePCB = readyHead;
+  //Empty Ready queue
+  if(readyHead == NULL){
+    return NULL;
+  }else if(readyHead == readyTail){
 
-  readyHead = readyHead->next; //remove the PCB at the head of the ready queue
+    removePCB = readyHead;
+    readyHead = NULL;
+    readyTail = NULL;
+    return removePCB;
+    
+  }else{
+    removePCB = readyHead;
+    readyHead = readyHead->next;//remove the PCB at the head of the ready queue
+    readyHead->prev = NULL;  //remove the reference of original ready Head's prev pointer
+    return removePCB;
+  }
 
-  readyHead->prev = NULL; //remove the reference of original ready Head's prev pointer
-
-  return removePCB;
-  
 }
