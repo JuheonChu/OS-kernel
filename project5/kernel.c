@@ -554,9 +554,12 @@ int executeProgram(char * fname){
   setKernelDataSegment();
   process = getFreePCB(); //get the available process
   restoreDataSegment();
+
   
   kStrcpy(fname, process->name);
 
+  setKernelDataSegment();
+  
   //printString(fname); shell
   //printString(proces->name); shell
   process->segment = segment;
@@ -564,6 +567,8 @@ int executeProgram(char * fname){
   process->stackPointer = 0xFF00; // set the stack pointer to 0xFF00
 
   addToReady(process);
+
+  restoreDataSegment();
   
   while(index < (numSectors * 512)){
      putInMemory(segment, index, buffer[index]);
@@ -596,7 +601,7 @@ void terminate(){
 
   
   //free the memory segment that is using
-  releaseMemorySegment(running);
+  releaseMemorySegment(running->segment);
 
 
   //free the PCB that is using

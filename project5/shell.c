@@ -22,7 +22,7 @@ void main(){
   char buffer[13312]; //file buffer
 
 
-  //enableInterrupts();
+  enableInterrupts();
   
   while(1){
     //clear(line);

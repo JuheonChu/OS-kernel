@@ -71,27 +71,14 @@ int getFreeMemorySegment(){
  */ 
 void releaseMemorySegment(int seg){
   int releaseSegment;
+  int segIdx;
+  
+  releaseSegment = seg;
+  
+  segIdx = (releaseSegment / 4096) -2;
 
-  // seg corresponds from 0x2000 to 0x8000
-  if(seg == 0x2000){
-    releaseSegment = 0;
-  }else if(seg == 0x3000){
-    releaseSegment = 1;
-  }else if(seg == 0x4000){
-    releaseSegment = 2;
-  }else if(seg == 0x5000){
-    releaseSegment = 3;
-  }else if(seg == 0x6000){
-    releaseSegment = 4;
-  }else if(seg == 0x7000){
-    releaseSegment = 5;
-  }else if(seg == 0x8000){
-    releaseSegment = 6;
-  }else{
-    releaseSegment = 7;
-  }
-
-  memoryMap[releaseSegment] = FREE; //release the memory segment 
+  memoryMap[segIdx] = FREE;
+  
 }
 
 /**
@@ -128,6 +115,8 @@ void releasePCB(struct PCB *pcb){
   pcb->next = NULL; //set the next PCB to NULL
   pcb->prev = NULL; //set the previous PCB to NULL
   pcb->name[0] = 0x00; //set the first character of the PCB's name to 0x00
+  pcb->segment = 0x00;
+  pcb->stackPointer = 0x00;
 }
 
 /**
@@ -163,14 +152,14 @@ struct PCB *removeFromReady(){
   //Empty Ready queue
   if(readyHead == NULL){
     return NULL;
-  }else if(readyHead == readyTail){
+  }else if(readyHead == readyTail){ //When there is only one PCB in ready queue
 
     removePCB = readyHead;
     readyHead = NULL;
     readyTail = NULL;
     return removePCB;
     
-  }else{
+  }else{ //general case
     removePCB = readyHead;
     readyHead = readyHead->next;//remove the PCB at the head of the ready queue
     readyHead->prev = NULL;  //remove the reference of original ready Head's prev pointer
