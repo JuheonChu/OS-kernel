@@ -53,14 +53,14 @@ int getFreeMemorySegment(){
   
   for(i = 0; i < 8; i++){
     if(memoryMap[i] == FREE){
-      freeMemoryIndex = i;
-      break;
+      memoryMap[i] = USED;
+      return i;
     }
   }
 
-  memoryMap[freeMemoryIndex] = USED; // returned memory segment should be marked as "USED"
+  return -1;
 
-  return freeMemoryIndex;
+ 
 }
 
 /**
@@ -74,9 +74,9 @@ void releaseMemorySegment(int seg){
   int segIdx;
   
   releaseSegment = seg;
-  
+  // printInt(seg)
   segIdx = (releaseSegment / 4096) -2;
-
+  //printInt(segIdx);
   memoryMap[segIdx] = FREE;
   
 }
@@ -95,7 +95,7 @@ struct PCB *getFreePCB(){
   for(i = 0; i < 8;i++){
     if(pcbPool[i].state == DEFUNCT){
       pcbPool[i].state = STARTING;
-	return pcbPool+i;
+	return &pcbPool[i];
     }
   }
 
@@ -126,6 +126,8 @@ void releasePCB(struct PCB *pcb){
  */
 void addToReady(struct PCB *pcb){
 
+  /*Check the 232 Data Structure Doubly linked list && Queue*/
+  
   //When the ready queue is empty;
   if(readyHead == NULL){
     readyHead = pcb;
@@ -149,11 +151,12 @@ void addToReady(struct PCB *pcb){
 struct PCB *removeFromReady(){
   struct PCB *removePCB;
 
+  /*Check Comp 232 Data Structure Doubly Linked List and queue*/
+
   //Empty Ready queue
   if(readyHead == NULL){
     return NULL;
   }else if(readyHead == readyTail){ //When there is only one PCB in ready queue
-
     removePCB = readyHead;
     readyHead = NULL;
     readyTail = NULL;
@@ -166,4 +169,17 @@ struct PCB *removeFromReady(){
     return removePCB;
   }
 
+}
+
+
+struct PCB * getCurrentPCB(int segment){
+  int index = 0;
+
+  for(index = 0; index < 8; index++){
+    if(pcbPool[index].segment == segment){
+      return &pcbPool[index];
+    }
+  }
+
+  return NULL;
 }

@@ -21,7 +21,7 @@ void main(){
   
   char buffer[13312]; //file buffer
 
-
+  //start every user program with enableInterrupts() for concurrent execution.
   enableInterrupts();
   
   while(1){
@@ -210,6 +210,25 @@ void recognizesUserCommand(char * line, char * buffer){
     clear(buf);
     
 
+  }else if(line[0] == 'p' && line[1] == 's' && line[2] == '\0'){
+
+    showProcess();
+
+  }else if(line[0] == 'k' && line[1] == 'i' && line[2] == 'l' && line[3] == 'l' && line[4] == ' '){
+
+    char * segments;
+
+    i = 5;
+
+  
+
+    while(line[i] != '\0'){ 
+      segments[i-5] = line[i];
+      i++;
+    }
+
+    kill(segments);
+    
   }
   else{
     errorMessage[0] = 'U';

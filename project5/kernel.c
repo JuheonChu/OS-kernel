@@ -22,6 +22,9 @@ int writeSector(char * buffer, int sector);
 int deleteFile(char * fname);
 int writeFile(char * fname, char * buffer, int sectors);
 void handleTimerInterrupt(int segment, int stackPointer);
+void yield();
+void showProcesses();
+void printIntHelper(int num);
 
 typedef char byte;
 
@@ -284,6 +287,12 @@ int handleInterrupt21(int ax, int bx, int cx, int dx){
     return deleteFile(buf);
   }else if(ax == 0x08){
     return writeFile(bx,cx,dx);
+  }else if(ax == 0x09){
+    yield();
+  }else if(ax == 0x0A){
+    showProcesses();
+  }else if(ax == 0x0B){
+    return kill(bx);
   }
   else{
     printString("There is an Error!\0"); //prints out the error message
@@ -538,7 +547,7 @@ int executeProgram(char * fname){
 
   setKernelDataSegment();
   
-  segIdx = getFreeMemorySegment();
+  segIdx = getFreeMemorySegment(); //memoryMap[segIdx] = USED
 
   restoreDataSegment();
   
@@ -578,7 +587,6 @@ int executeProgram(char * fname){
    
   initializeProgram(segment);
 
-  //launchProgram(segment);
   
   return 1; 
 }
@@ -614,6 +622,9 @@ void terminate(){
 
   restoreDataSegment();
 
+  //Give up the remaining time slice of the proecess
+  //yield();
+  
   while(1);
 }
 
@@ -830,7 +841,7 @@ void handleTimerInterrupt(int segment, int sp) {
 
   int i;
   
-  //struct PCB process;
+  struct PCB * process;
 
   struct PCB * removeHead;
 
@@ -838,6 +849,7 @@ void handleTimerInterrupt(int segment, int sp) {
 
   setKernelDataSegment();
 
+  //process = getCurrentPCB(segment);
  
   //STEP 1: Save the current process
   if(running != NULL){
@@ -894,6 +906,97 @@ void handleTimerInterrupt(int segment, int sp) {
 
 
   returnFromTimer(newSegment,newSp);
+
 }
 
+/**
+ * The function causes the executing process to give up the remainder of its * time slice and be put back into the ready queue
+ * 
+ * @author John Chu & Adia Wu & Amir Zawad
+ */
+void yield(){
+  
+  //Timer interrupt to give up the remainder of the time slice
+  interrupt(0x08, 0, 0, 0, 0);
+}
 
+/**
+ * Display a list of the names and memory segment indices of all of the 
+ * currently executing processes. Note the index of a memory segment is its  * index in the memory map (e.g. 0x2000-> 0, 0x3000->1, etc.). 
+ * 
+ * @return void
+ * @author John Chu & Amir Zawad & Adia Wu
+ */
+void showProcesses(){
+
+  struct PCB * process;
+  int i;
+  int memory;
+  unsigned int segIdx; 
+
+
+  char segments[20];
+  int processIdx;
+
+  
+  
+  
+  for(i = 0; i < 8; i++){ //Go through the memory map
+    setKernelDataSegment();
+    memory = memoryMap[i];
+    restoreDataSegment();
+    if(memory == USED){
+     
+      //restoreDataSegment();
+      setKernelDataSegment();
+      process = &pcbPool[i];
+      //segIdx = (process->segment / 4096) -2;
+      
+     
+      printString("Process: \0");
+      printString(process->name);
+       printString("\r\n\0");
+      restoreDataSegment();
+          
+    }
+  }
+
+}
+
+/**
+ * Kill the process that is executing in the segment with the specified 
+ * segment index. 
+ * 
+ * @param int segment
+ * @return 1 if the process is successfully killed
+ * @return -1 if there is no process running with the segment index
+ * @author John Chu & Amir Zawad & Adia Wu 
+*/
+int kill(int segment){
+  struct PCB * process;
+
+  //STEP 1: get the process with the specified segment
+
+  setKernelDataSegment();
+
+  process = getCurrentPCB(segment);
+
+  if(process == NULL){
+    printString("process not found!\0");
+    return -1;
+  }
+
+  printString("Successfully Killed the process \0");
+  printInt(process->segment);
+  printString(process->name);
+  printString("\r\n\0");
+
+  releaseMemorySegment(process->segment);
+  releasePCB(process);
+
+  
+  
+  restoreDataSegment();
+
+  return 1;
+}

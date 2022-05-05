@@ -181,3 +181,14 @@ int println(char *str) {
 	return rv;
 }
 
+void yield(){
+  interrupt(0x21, 0x09, 0, 0, 0);
+}
+
+void showProcess(){
+  interrupt(0x21, 0x0A, 0,0,0);
+}
+
+int kill(char * segments){
+  return interrupt(0x21, 0x0B, segments,0,0);
+}
