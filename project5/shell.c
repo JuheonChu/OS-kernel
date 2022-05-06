@@ -154,6 +154,7 @@ void recognizesUserCommand(char * line, char * buffer){
    j = 7;
    k = 0;
 
+   // stores the name of src file into char [] src.
    while(line[i] != ' '){ //notice that filename cannot be more than 6 characters
       /* read contents of <file> on screen.*/
       src[k] = line[i];
@@ -166,7 +167,8 @@ void recognizesUserCommand(char * line, char * buffer){
   
     i++;
     k = 0;
-    
+
+    // stores the name of the dest file into char [] dest.
     while(line[i] != '\0'){
       dest[k] = line[i];
       i++;
@@ -216,18 +218,52 @@ void recognizesUserCommand(char * line, char * buffer){
 
   }else if(line[0] == 'k' && line[1] == 'i' && line[2] == 'l' && line[3] == 'l' && line[4] == ' '){
 
-    char * segments;
-
-    i = 5;
+    int killProcessID = -1;
 
   
-
-    while(line[i] != '\0'){ 
-      segments[i-5] = line[i];
-      i++;
+    switch(line[5]){
+    case '0':
+      killProcessID = 0;
+      printString("Zero\0");
+      break;
+    case '1':
+      killProcessID = 1;
+      //printString("One\0");
+      break;
+    case '2':
+      killProcessID = 2;
+      //printString("Two\0");
+      break;
+    case '3':
+      killProcessID = 3;
+      //printString("Three\0");
+      break;
+    case '4':
+      killProcessID = 4;
+      //printString("Four\0");
+      break;
+    case '5':
+      killProcessID = 5;
+      //printString("Five\0");
+      break;
+    case '6':
+      killProcessID = 6;
+      //printString("Six\0");
+      break;
+    case '7':
+      killProcessID = 7;
+      //printString("Seven\0");
+      break;
+    default:
+      killProcessID = -1;
+      break;
+    }
+    
+    if(killProcessID != -1){
+      kill(killProcessID);
     }
 
-    kill(segments);
+    clear(line);
     
   }
   else{

@@ -47,12 +47,11 @@ void main(){
 
   initializeProcStructures();
 
-    makeInterrupt21();
+  makeInterrupt21();
 
-    
   
-    handleInterrupt21(0x04,"shell\0",0x2000,0);
-    makeTimerInterrupt();
+  handleInterrupt21(0x04,"shell\0",0x2000,0);
+  makeTimerInterrupt();
 
   
   
@@ -950,11 +949,13 @@ void showProcesses(){
       //restoreDataSegment();
       setKernelDataSegment();
       process = &pcbPool[i];
-      //segIdx = (process->segment / 4096) -2;
+      segIdx = (process->segment / 4096) -2;
       
      
       printString("Process: \0");
       printString(process->name);
+      printString("     |      \0");
+      printInt(segIdx);
        printString("\r\n\0");
       restoreDataSegment();
           
@@ -972,31 +973,33 @@ void showProcesses(){
  * @return -1 if there is no process running with the segment index
  * @author John Chu & Amir Zawad & Adia Wu 
 */
-int kill(int segment){
+int kill(int segment){ //segment index
+  
   struct PCB * process;
+  int segmentValue, i, pcbSegmentValue;
 
-  //STEP 1: get the process with the specified segment
+  segmentValue = (segment * 0x1000) + 0x2000;
 
-  setKernelDataSegment();
+  //STEP 1: Compute the segment value from index passed to kill process
+  
+  for(i = 0; i < 8; i++){
+    setKernelDataSegment();
+    process = &(pcbPool[i]);
+    pcbSegmentValue = process->segment;
+    restoreDataSegment();
 
-  process = getCurrentPCB(segment);
+    if(pcbSegmentValue == segmentValue){
+      setKernelDataSegment();
+       printString("Successfully Killed the process \0");
+       //printInt(segment);
+       //printString(pcbPool[i].name);
+       releasePCB(process);
+       releaseMemorySegment(pcbSegmentValue);
 
-  if(process == NULL){
-    printString("process not found!\0");
-    return -1;
+      restoreDataSegment();
+      return 1;
+    }
   }
-
-  printString("Successfully Killed the process \0");
-  printInt(process->segment);
-  printString(process->name);
-  printString("\r\n\0");
-
-  releaseMemorySegment(process->segment);
-  releasePCB(process);
-
-  
-  
-  restoreDataSegment();
-
-  return 1;
+  printString("PCB Not found!\0");
+  return -1;
 }

@@ -69,13 +69,13 @@ int getFreeMemorySegment(){
  *
  * @author John Chu & Amir Zawad & Adia Wu
  */ 
-void releaseMemorySegment(int seg){
+void releaseMemorySegment(int seg){ //seg: idx (0~7)
   int releaseSegment;
   int segIdx;
   
   releaseSegment = seg;
   // printInt(seg)
-  segIdx = (releaseSegment / 4096) -2;
+  segIdx = (releaseSegment / 0x1000) -2;
   //printInt(segIdx);
   memoryMap[segIdx] = FREE;
   
