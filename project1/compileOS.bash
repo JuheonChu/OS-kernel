@@ -1,4 +1,5 @@
 #!/bin/bash
+#refresh the setting
 source ../PathSetter.bash
 #compile the kernel file
 bcc -ansi -c -o kernel.o kernel.c
