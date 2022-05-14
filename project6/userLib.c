@@ -1,0 +1,214 @@
+/*utility library functions*/
+#include "userlib.h"
+
+int biosPrint(int ax, int bx, int cx, int dx){
+  return interrupt(0x10, ax*256 + 0x00,bx*256,cx,dx);
+}
+
+
+void backspace(int index, char * buf){
+   interrupt(0x10, 0x0E*256+0x08, 0, 0, 0);
+   buf[index]=' ';
+   interrupt(0x10, 0x0E*256+buf[index], 0, 0, 0);
+   interrupt(0x10, 0x0E*256+0x08, 0, 0, 0);
+}
+
+int printString(char * str){
+  return interrupt(0x21, 0x00, str, 0, 0);
+}
+
+int readChar(){
+  return interrupt(0x16,0, 0, 0, 0);
+}
+
+int readString(char * str, int limit){
+  return interrupt(0x21, 0x01, str, 0, 0);
+}
+
+char* readStringHelper(char * buf, int limit){
+  char ch = 0x00;
+  int index = 0;
+
+
+  char readCh[2];
+
+  readCh[1] = 0x00;
+
+  ch = 0x00;
+  ch = readChar();
+  
+  while(ch != 0x0D){
+    if(index >= limit){ //if we are at the cursor position ahead of where we initially set as a limit
+      //buf[index]=0x00; //since we cannot assign any further input character, we can add a null termination.
+      ch = readChar();
+      if(ch == 0x08){ //even if our cursor hits the limit, we still need to allow the Backspace operation works
+	interrupt(0x10, 0x0E*256+0x08, 0, 0, 0);
+	index--;
+	buf[index]=' ';
+	//interrupt(0x10, 0x0E*256 + ch, 0, 0, 0);
+	interrupt(0x10, 0x0E*256+buf[index], 0, 0, 0);
+	interrupt(0x10, 0x0E*256+0x08, 0, 0, 0);
+	
+      }else{
+	continue;
+      }
+    
+    }else if(ch == 0x08){ //Backspace/Delete key entered
+      if(index > 0){ //any index greater than 0 should allow the user to be able to delete the character that he/she previously typed.
+	interrupt(0x10, 0x0E*256+0x08, 0, 0, 0);
+	index--;
+	buf[index]=' ';
+	//interrupt(0x10, 0x0E*256 + ch, 0, 0, 0);
+	interrupt(0x10, 0x0E*256+buf[index], 0, 0, 0);
+	interrupt(0x10, 0x0E*256+0x08, 0, 0, 0);
+      }else{ //we don't have to do anything when there is no character in buf
+	if(index == 0){
+	  ch = readChar();
+	}
+	continue;
+      }
+   
+    }else{ //normal situation for typing characters with the keyboard
+      buf[index] = ch;
+      readCh[0] = ch;
+      printString(readCh); // it has to print readChar, not buf because buf is not terminated with null pointer yet.
+      index++; //move the cursor to the next index
+     
+    }
+    
+    ch = readChar();
+  }
+
+  buf[index] = 0x00;
+
+
+  
+  return buf;
+}
+
+
+
+
+int readfile(char * filename, char * str){
+  return interrupt(0x21, 0x03, filename, str, 0); 
+}
+
+void type(char * filename, char * file){
+  readfile(filename, file);
+  printString(file);
+}
+
+int executeProgram(char * filename){
+   return interrupt(0x21, 0x04, filename, 0x2000, 0);
+}
+
+void terminate(){
+  interrupt(0x21, 0x05, 0,0,0);
+}
+
+void clear(char * buffer){
+  int i = 0;
+  for(i = 0; i < 13312 && buffer[i] != '\0'; i++){
+    buffer[i] = 0x00;  // clear contents of buffer
+  }
+  i = 0;
+}
+
+/**
+  * helper method to get the number of sectors to use to write the file
+  * @author John chu, Amir Zawad, Adia Wu 
+  */
+void writeFileHelper(char * dest, char * buffer, int numSectors){
+  writeFile(dest+'\0', buffer, numSectors);
+  clear(buffer);
+}
+
+
+int deleteFile(char * fname){
+  
+  return interrupt(0x21, 0x07, fname, 0, 0);
+}
+
+int writeFile(char * fname, char * buffer, int sectors){
+  deleteFile(fname);
+  interrupt(0x21, 0x08, fname, buffer, sectors);
+  return sectors;
+}
+
+int readSector(char * buffer, int absSector){
+  // printString("readSector()\0");
+  return interrupt(0x21, 0x02, buffer, absSector, 0); 
+}
+
+
+
+/* helper Function to return the remainder for modulus operation.
+ * @param int sector, int divisor
+ * @return remainder 
+ * @author John Chu, Amir Zawad, Adia Wu
+ */
+int MOD(int sector, int divisor){
+    int remainder;
+    while(sector >= divisor){
+      sector = sector - divisor;
+    }
+    remainder = sector;
+    return remainder;
+}
+int strCpy(char *str1, char *str2, int len) {
+	int i=0;
+	for (i=0; i<len; i++) {
+		str2[i] = str1[i];
+	}
+	return len;
+}
+void exit() {
+	interrupt(0x21, 0x05, 0, 0, 0);
+	
+}
+
+int read(char *buf, int len) {
+	return interrupt(0x21, 0x01, buf, len, 0);
+}
+
+/*
+ * Print the string to the console.  str must be null terminated.
+ * Return the number of characters printed.
+ */
+int print(char *str) {
+	return interrupt(0x21, 0x00, str, 0, 0);
+}
+
+int println(char *str) {
+	int rv = print(str);
+	print("\n\r\0");
+	return rv;
+}
+
+void yield(){
+  interrupt(0x21, 0x09, 0, 0, 0);
+}
+
+void showProcess(){
+  interrupt(0x21, 0x0A, 0,0,0);
+}
+
+int kill(char * segments){
+  return interrupt(0x21, 0x0B, segments,0,0);
+}
+
+void displayMenu(){
+
+    printString("1. type <file> (display the contents of a <file>)\r\n\0");
+    printString("2. execute <program> (execute the <program>)\r\n\0");
+    printString("3. Delete <file> (delete the <file>)\r\n\0");
+    printString("4. copy <src> <dest> (copy the src file and write to <dest file) \r\n\0");
+    printString("5. dir (list all the files in the directory)\r\n\0");
+    printString("6. ps (View all the running processes)\r\n\0");
+    printString("7. kill <seg> (kill a process with <seg> ID \r\n\0");
+    
+}
+
+void sleep(int seconds){
+  return interrupt(0x21, 0xA1, seconds, 0, 0);
+}
