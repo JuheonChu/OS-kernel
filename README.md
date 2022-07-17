@@ -14,10 +14,10 @@ The Butcher operating system is a 16-bit operating system created for use in Ope
 
 # Setup Process
 In order to set up and use Butcher operating system, following steps are required.
-Step I. Download virtual machine with Mac High Sierra 10.13.vmdk version. Also, download Mac High Sierra 10.13.iso file and launch them on the virtual machine.  
-Step II. Install XQuartz software application to run the bochs program that enables to display the result of the operation of Butcher operating system.
-Step III: Execute the XQuartz application and go to the directory project 5 using the command “cd /Desktop/Comp354Projects/project5”
-Step IV: Run the compileOS.bash using “./compileOS.bash” on XQuartz terminal which contains a collection of command lines capable of launching the bootloader and user programs, compiling the programs and files, and linking the object files and placing the resulting executable files on the disk. 
+# Step I. Download virtual machine with Mac High Sierra 10.13.vmdk version. Also, download Mac High Sierra 10.13.iso file and launch them on the virtual machine.  
+# Step II. Install XQuartz software application to run the bochs program that enables to display the result of the operation of Butcher operating system.
+# Step III: Execute the XQuartz application and go to the directory project 5 using the command “cd /Desktop/Comp354Projects/project5”
+# Step IV: Run the compileOS.bash using “./compileOS.bash” on XQuartz terminal which contains a collection of command lines capable of launching the bootloader and user programs, compiling the programs and files, and linking the object files and placing the resulting executable files on the disk. 
 
 # Implementation
 As briefly mentioned in the introduction part, Butcher operating system contains diverse rudimentary utilities to behave as an operating system throughout five projects conducted so far. For each part, following function implementations are used to construct the Butcher operating system kernel: 
