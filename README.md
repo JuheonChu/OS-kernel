@@ -1,6 +1,6 @@
-##Butcher Operating System Technical Report##
+##Butcher Operating System Technical Report
 
-##Introduction/Overview##
+##Introduction/Overview
 The Butcher operating system is a 16-bit operating system created for use in Operating System course kernel project. This project simulates a basic operating system and is capable of executing the following implementations: 
 	Bootloader program launched on the floppya.img disk image to initiate Butcher operating system kernel.
 	Basic printing functions to print out “Hello World” using putChar function and putInMemory function.
